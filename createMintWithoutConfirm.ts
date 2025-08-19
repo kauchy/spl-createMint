@@ -62,7 +62,7 @@ async function main() {
     const DECIMALS = 6;
     const name = "K02 Stock";
     const symbol = "vK02";
-    const uri = "https://example.com/mst.json";
+    const uri = "https://raw.githubusercontent.com/kauchy/k-meta/main/k02.png";
 
     const ownerSeed = new Uint8Array([
         55,243,96,172,193,169,176,154,229,209,150,66,130,138,255,245,185,173,109,207,9,153,33,
