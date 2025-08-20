@@ -66,8 +66,8 @@ async function main() {
     //小数位及元数据
     const DECIMALS = 6;
     const name = "K01 Stock";
-    const symbol = "vK01";
-    const uri = "https://example.com/mst.json";
+    const symbol = "K01";
+    const uri = "https://raw.githubusercontent.com/kauchy/k-meta/main/k01.json";
 
     const ownerSeed = new Uint8Array([
         55,243,96,172,193,169,176,154,229,209,150,66,130,138,255,245,185,173,109,207,9,153,33,
@@ -75,11 +75,6 @@ async function main() {
         210,32,223,227,60,140,4,136,254,19,116,38,130,87,80,170
     ]);
 
-    const groupSeed = new Uint8Array([
-        182, 202, 128, 188, 97, 130, 197, 199, 70, 114, 188, 212, 252, 1, 67, 13, 237, 24, 77, 139, 243, 135, 226, 82, 216,
-        20, 224, 164, 193, 91, 33, 54, 210, 204, 168, 245, 95, 143, 8, 222, 209, 181, 55, 86, 81, 248,
-        228, 210, 174, 227, 215, 182, 100, 37, 13, 106, 167, 137, 99, 48, 46, 139, 253, 127
-    ]);
 
     /**
      * mint相关地址和账户
@@ -104,16 +99,10 @@ async function main() {
     const permanentDelegateAddress = address("7N87ktRhyHhmntj5u2C6aNkVY6qs9zkWczhVB65uPH5K");
     //隐私交易管理员，多签？
     const confidentialTransferAuthorityAddress = address("7N87ktRhyHhmntj5u2C6aNkVY6qs9zkWczhVB65uPH5K");
-    //groupMemberPointer管理员，多签？
-    const groupMemberPointerAuthorityAddress = address("7N87ktRhyHhmntj5u2C6aNkVY6qs9zkWczhVB65uPH5K");
-    //tokenGroup地址，提前创建好的
-    const groupAddress = address("3PynwKogt4RECnQiiJDr3A9zrRx8SS3L1AhGJC7zk9dM");
-    //tokenGroup管理员账户，在创建groupMember过程中需要签名
-    const groupAuthority = await createKeyPairSignerFromBytes(groupSeed);
+
 
     console.log(`✅ - Generated key pairs`);
     console.log(`     Mint: ${mint.address}`);
-    console.log(`     Mint Group: ${groupAddress}`);
     console.log(`     Payer: ${payer.address}`);
     console.log(`     Mint Authority: ${mintAuthority}`);
     console.log(`     Freeze Authority: ${freezeAuthorityAddress}`);
@@ -174,16 +163,6 @@ async function main() {
         auditorElgamalPubkey: none(),
     });
 
-    const groupMemberPointerExtension = extension('GroupMemberPointer', {
-        authority: groupMemberPointerAuthorityAddress,
-        memberAddress: mint.address,
-    });
-
-    const groupMemberExtension =  extension('TokenGroupMember', {
-            mint: mint.address,
-            group: groupAddress,
-            memberNumber: 1,
-    });
 
     const [createMintInstruction, initMintInstruction] =
         await getCreateMintInstructions({
@@ -199,8 +178,6 @@ async function main() {
                 permanentDelegateExtension,
                 transferHookExtension,
                 confidentialTransferExtension,
-                groupMemberPointerExtension,
-                groupMemberExtension
             ],
             freezeAuthority: freezeAuthorityAddress,
             mint,
@@ -252,12 +229,6 @@ async function main() {
             auditorElgamalPubkey: none(),
             autoApproveNewAccounts: false
         }),
-        // Initialize GroupMemberPointer
-        getInitializeGroupMemberPointerInstruction({
-            mint: mint.address,
-            authority: groupMemberPointerAuthorityAddress,
-            memberAddress: mint.address,
-        }),
 
         // Initialize the Mint
         initMintInstruction,
@@ -273,17 +244,7 @@ async function main() {
             symbol: symbol,
             uri: uri,
         }),
-        // Initialize GroupMember
-        // 初始化token group member的时候除了需要修改当前mint账户状态，还需要通过groupAuthority修改tokenGroup的size，需要两个签名
-        getInitializeTokenGroupMemberInstruction({
-            member: mint.address,
-            memberMint: mint.address,
-            //签名
-            memberMintAuthority: mintAuthority,
-            group: groupAddress,
-            //签名
-            groupUpdateAuthority: groupAuthority,
-        }),
+
     ];
 
     const {value: latestBlockhash} = await rpc.getLatestBlockhash().send();
